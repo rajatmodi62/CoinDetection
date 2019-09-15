@@ -18,6 +18,19 @@ from tqdm import tqdm
 import os
 from torchvision.transforms import ToTensor, Normalize, Compose
 from augmentation_pipeline import augment_and_show
+from models import get_model,Loss
+import GPUtil as GPU
+
+
+
+#get cuda here
+def get_cuda_devices():
+    device_list=[]
+    device=torch.device("cuda" if (torch.cuda.is_available()) else "cpu")
+    if device.type=="cuda":
+        device_list=GPU.getGPUs()
+    return device,device_list
+
 img_size=(499,499)
 
 
@@ -34,6 +47,8 @@ img_transform = Compose([
     Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
+def get_n_classes(root: Path):
+    return len(os.listdir(root))
 
 class CoinDataset(Dataset):
 
@@ -82,6 +97,10 @@ class CoinDataset(Dataset):
         return img_transform(img), self.image_path[idx],self.image_cat[idx],self.image_label[idx]
 
 
+#define the optimizer here
+
+
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -89,6 +108,7 @@ def main():
     arg('--size', type=str, default='512X512', help='Input size, for example 512X512. Must be multiples of 2')
     arg('--num_workers', type=int, default=4, help='Enter the number of workers')
     arg('--batch_size', type=int, default=16, help='Enter batch size')
+    arg('--epoch', type=int, default=52, help='Enter number of epochs to run training for')
     args = parser.parse_args()
 
 
@@ -96,7 +116,8 @@ def main():
     local_data_path.mkdir(exist_ok=True)
     train_path=local_data_path/'..'/'input'/'train'
     a=CoinDataset(train_path,to_augment=True)
-
+    n_classes=get_n_classes(train_path)
+    print(n_classes)
     '''
 
     num_workers,batch_size
@@ -115,6 +136,22 @@ def main():
     train_loader=make_loader(train_path,to_augment=True, shuffle=True)
     validation_path=local_data_path/'..'/'input'/'validation'
     validation_loader=make_loader(validation_path,to_augment=True, shuffle=True)
+
+    #define model, and handle gpus
+    device,device_list=get_cuda_devices()
+    print('device is',device)
+    model=get_model(model_name='resnet18',pretrained_status=True,n_classes=n_classes).to(device)
+    if device.type=="cuda":
+        model = nn.DataParallel(model, device_ids=device_list)
+        print('cuda devices',device_list)
+
+    #define optimizer and learning_rate
+    init_optimizer=lambda lr: Adam(model.parameters(), lr=lr)
+    lr=0.0001
+    optimizer=init_optimizer(lr)
+    loss=Loss()
+
+
 
     for i, (inputs, _,_,targets) in enumerate(train_loader):
         print(inputs.size())
