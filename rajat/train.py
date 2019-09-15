@@ -21,6 +21,23 @@ from augmentation_pipeline import augment_and_show
 from models import get_model,Loss
 import GPUtil as GPU
 
+   #  ''' namita code here :-)'''
+   #  def train_model(model, criterion, optimizer, num_epochs =52):
+   #      for epoch in range(num_epochs):
+   #          print('Epoch {}/{}'.format(epoch/num_epochs -1))
+   #
+   #          #Each epoch has training and evaluation mode
+   #          for mode in ['train', 'val']:
+   #              if mode = 'train':
+   #                  model.train()
+   #              else:
+   #                  model.eval()
+   #
+   #              for inputs, labels in DataLoaders[mode]:
+   #                  inputs = inputs.to(device)
+   #                  labels = labels.to(device)
+   #
+   # '''       namita code end      '''
 
 
 #get cuda here
@@ -96,19 +113,13 @@ class CoinDataset(Dataset):
         #return img, self.image_path[idx],self.image_cat[idx],self.image_label[idx]
         return img_transform(img), self.image_path[idx],self.image_cat[idx],self.image_label[idx]
 
-
-#define the optimizer here
-
-
-
-
 def main():
     parser = argparse.ArgumentParser()
     arg = parser.add_argument
     arg('--size', type=str, default='512X512', help='Input size, for example 512X512. Must be multiples of 2')
     arg('--num_workers', type=int, default=4, help='Enter the number of workers')
     arg('--batch_size', type=int, default=16, help='Enter batch size')
-    arg('--epoch', type=int, default=52, help='Enter number of epochs to run training for')
+    arg('--n_epochs', type=int, default=52, help='Enter number of epochs to run training for')
     args = parser.parse_args()
 
 
@@ -149,10 +160,23 @@ def main():
     init_optimizer=lambda lr: Adam(model.parameters(), lr=lr)
     lr=0.0001
     optimizer=init_optimizer(lr)
-    loss=Loss()
-
-
-
-    for i, (inputs, _,_,targets) in enumerate(train_loader):
-        print(inputs.size())
+    criterion=Loss()
+    #epoch_number
+    for epoch in range(0, args.n_epochs):
+        model.train()
+        for i, (inputs,_,_, targets) in enumerate(train_loader):
+            inputs=inputs.to(device)
+            outputs = model(inputs)
+            print('outpus',outputs.size())
+            print('targets',targets.size())
+            # loss = criterion(outputs, targets)
+            # optimizer.zero_grad()
+            # batch_size = inputs.size(0)
+            #
+            # (batch_size * loss).backward()
+            # optimizer.step()
+            # print(loss.data())
+            #loss=criterion()
+    # for i, (inputs, _,_,targets) in enumerate(train_loader):
+    #     print(inputs.size())
 main()
