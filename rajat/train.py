@@ -25,8 +25,9 @@ import GPUtil as GPU
 def get_cuda_devices():
     device_list=[]
     device=torch.device("cuda" if (torch.cuda.is_available()) else "cpu")
-    if device.type=="cuda":
-        device_list=GPU.getGPUs()
+    device_list=[0,1]
+    # if device.type=="cuda":
+    #     device_list=GPU.getGPUs()
     return device,device_list
 
 img_size=(499,499)
@@ -105,6 +106,7 @@ def validation(model: nn.Module, criterion, valid_loader):
         inputs=inputs.to(device)
         outputs = model(inputs)
         _, preds = torch.max(outputs, 1)
+        targets=targets.to(device)-1
         loss = criterion(outputs, targets)
         batch_size = inputs.size(0)
         losses.append(loss.item())
@@ -114,7 +116,7 @@ def validation(model: nn.Module, criterion, valid_loader):
     print('Valid loss: {:.5f}'.format(valid_loss))
     metrics = {'valid_loss': valid_loss}
     return metrics
-
+device,device_list=get_cuda_devices()
 def main():
     parser = argparse.ArgumentParser()
     arg = parser.add_argument
@@ -156,12 +158,12 @@ def main():
     validation_loader=make_loader(validation_path,to_augment=True, shuffle=True)
 
     #define model, and handle gpus
-    device,device_list=get_cuda_devices()
+
     print('device is',device)
-    model_name='resnet18'
+    model_name='resnet152'
     model=get_model(model_name=model_name,pretrained_status=True,n_classes=n_classes).to(device)
     if device.type=="cuda":
-        model = nn.DataParallel(model, device_ids=device_list)
+        #model = nn.DataParallel(model, device_ids=device_list)
         print('cuda devices',device_list)
 
     #define optimizer and learning_rate
@@ -202,6 +204,7 @@ def main():
             inputs=inputs.to(device)
             outputs = model(inputs)
             _, preds = torch.max(outputs, 1)
+            targets=targets.to(device)-1
             loss = criterion(outputs, targets)
             optimizer.zero_grad()
             batch_size = inputs.size(0)
@@ -212,7 +215,7 @@ def main():
             (batch_size * loss).backward()
             optimizer.step()
         tq.close()
-        valid_metrics = validation(model, criterion, valid_loader)
+        valid_metrics = validation(model, criterion, validation_loader)
         valid_loss = valid_metrics['valid_loss']
         valid_losses.append(valid_loss)
         if valid_loss < best_valid_loss:
