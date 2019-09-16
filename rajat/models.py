@@ -26,7 +26,7 @@ def get_model(model_name='resnet18',pretrained_status=False,n_classes=2):
         model = models.resnet152(pretrained=pretrained_status)
 
     num_ftrs = model.fc.in_features
-    model.fc = nn.ReLU(nn.Linear(num_ftrs, n_classes))
+    model.fc = nn.Linear(num_ftrs, n_classes)
     return model
 
 class Loss:

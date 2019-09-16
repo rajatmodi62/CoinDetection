@@ -21,25 +21,6 @@ from augmentation_pipeline import augment_and_show
 from models import get_model,Loss
 import GPUtil as GPU
 
-   #  ''' namita code here :-)'''
-   #  def train_model(model, criterion, optimizer, num_epochs =52):
-   #      for epoch in range(num_epochs):
-   #          print('Epoch {}/{}'.format(epoch/num_epochs -1))
-   #
-   #          #Each epoch has training and evaluation mode
-   #          for mode in ['train', 'val']:
-   #              if mode = 'train':
-   #                  model.train()
-   #              else:
-   #                  model.eval()
-   #
-   #              for inputs, labels in DataLoaders[mode]:
-   #                  inputs = inputs.to(device)
-   #                  labels = labels.to(device)
-   #
-   # '''       namita code end      '''
-
-
 #get cuda here
 def get_cuda_devices():
     device_list=[]
@@ -63,6 +44,7 @@ img_transform = Compose([
     ToTensor(),
     Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
+
 
 def get_n_classes(root: Path):
     return len(os.listdir(root))
@@ -111,7 +93,7 @@ class CoinDataset(Dataset):
             img = self.augment(img)
 
         #return img, self.image_path[idx],self.image_cat[idx],self.image_label[idx]
-        return img_transform(img), self.image_path[idx],self.image_cat[idx],self.image_label[idx]
+        return img_transform(img), self.image_path[idx],self.image_cat[idx],torch.tensor(int(self.image_label[idx]),dtype=torch.int64)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -120,11 +102,15 @@ def main():
     arg('--num_workers', type=int, default=4, help='Enter the number of workers')
     arg('--batch_size', type=int, default=16, help='Enter batch size')
     arg('--n_epochs', type=int, default=52, help='Enter number of epochs to run training for')
+    arg('--report_each', type=int, default=10, help='Enter the span of last readings of running loss to report')
+    arg('--fold_no', type=int, default=0, help='Enter the fold no')
+
     args = parser.parse_args()
 
 
     local_data_path = Path('.').absolute()
     local_data_path.mkdir(exist_ok=True)
+    #mention the fold path here
     train_path=local_data_path/'..'/'input'/'train'
     a=CoinDataset(train_path,to_augment=True)
     n_classes=get_n_classes(train_path)
@@ -143,6 +129,7 @@ def main():
         )
 
     #craeting a dataloader
+    #mention the fold path here
     train_path=local_data_path/'..'/'input'/'train'
     train_loader=make_loader(train_path,to_augment=True, shuffle=True)
     validation_path=local_data_path/'..'/'input'/'validation'
@@ -151,7 +138,8 @@ def main():
     #define model, and handle gpus
     device,device_list=get_cuda_devices()
     print('device is',device)
-    model=get_model(model_name='resnet18',pretrained_status=True,n_classes=n_classes).to(device)
+    model_name='resnet18'
+    model=get_model(model_name=model_name,pretrained_status=True,n_classes=n_classes).to(device)
     if device.type=="cuda":
         model = nn.DataParallel(model, device_ids=device_list)
         print('cuda devices',device_list)
@@ -161,22 +149,49 @@ def main():
     lr=0.0001
     optimizer=init_optimizer(lr)
     criterion=Loss()
-    #epoch_number
+    #print(model)
+
+    report_each=args.report_each
+    #model save implementation
+    model_path= local_data_path/'model_checkpoints'
+    model_path.mkdir(exist_ok=True)
+    model_path=local_data_path/'model_checkpoints'/'{model_name}_{fold}.pt'.format(model_name=model_name,fold=args.fold_no)
+    best_model_path= local_data_path/'best_model_checkpoints'
+    best_model_path.mkdir(exist_ok=True)
+    best_model_path=local_data_path/'best_model_checkpoints'/'{model_name}_{fold}.pt'.format(model_name=model_name,fold=args.fold_no)
+    #updated fold checkpoint here
+    save = lambda ep: torch.save({
+        'model': model.state_dict(),
+        'epoch': ep,
+        'best_valid_loss': best_valid_loss
+    }, str(model_path))
+
+
+    best_valid_loss = float('inf')
     for epoch in range(0, args.n_epochs):
+
         model.train()
+        tq = tqdm(total=(len(train_loader) * args.batch_size))
+        tq.set_description('Epoch {}, lr {}'.format(epoch, lr))
+        losses = []
+
         for i, (inputs,_,_, targets) in enumerate(train_loader):
+
             inputs=inputs.to(device)
             outputs = model(inputs)
-            print('outpus',outputs.size())
-            print('targets',targets.size())
-            # loss = criterion(outputs, targets)
-            # optimizer.zero_grad()
-            # batch_size = inputs.size(0)
-            #
-            # (batch_size * loss).backward()
-            # optimizer.step()
-            # print(loss.data())
-            #loss=criterion()
-    # for i, (inputs, _,_,targets) in enumerate(train_loader):
-    #     print(inputs.size())
+            _, preds = torch.max(outputs, 1)
+            loss = criterion(outputs, targets)
+            optimizer.zero_grad()
+            batch_size = inputs.size(0)
+            tq.update(batch_size)
+            losses.append(loss.item())
+            mean_loss = np.mean(losses[-report_each:])
+            tq.set_postfix(loss='{:.5f}'.format(mean_loss))
+            (batch_size * loss).backward()
+            optimizer.step()
+            save(epoch)
+        tq.close()
+
+
+
 main()
