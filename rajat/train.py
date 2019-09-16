@@ -95,6 +95,26 @@ class CoinDataset(Dataset):
         #return img, self.image_path[idx],self.image_cat[idx],self.image_label[idx]
         return img_transform(img), self.image_path[idx],self.image_cat[idx],torch.tensor(int(self.image_label[idx]),dtype=torch.int64)
 
+
+def validation(model: nn.Module, criterion, valid_loader):
+    model.eval()
+    losses = []
+
+    for i, (inputs,_,_, targets) in enumerate(valid_loader):
+
+        inputs=inputs.to(device)
+        outputs = model(inputs)
+        _, preds = torch.max(outputs, 1)
+        loss = criterion(outputs, targets)
+        batch_size = inputs.size(0)
+        losses.append(loss.item())
+
+    valid_loss = np.mean(losses)  # type: float
+
+    print('Valid loss: {:.5f}'.format(valid_loss))
+    metrics = {'valid_loss': valid_loss}
+    return metrics
+
 def main():
     parser = argparse.ArgumentParser()
     arg = parser.add_argument
@@ -168,6 +188,8 @@ def main():
 
 
     best_valid_loss = float('inf')
+    valid_losses = []
+
     for epoch in range(0, args.n_epochs):
 
         model.train()
@@ -189,9 +211,14 @@ def main():
             tq.set_postfix(loss='{:.5f}'.format(mean_loss))
             (batch_size * loss).backward()
             optimizer.step()
-            save(epoch)
         tq.close()
-
+        valid_metrics = validation(model, criterion, valid_loader)
+        valid_loss = valid_metrics['valid_loss']
+        valid_losses.append(valid_loss)
+        if valid_loss < best_valid_loss:
+            print('found better val loss model')
+            best_valid_loss = valid_loss
+            shutil.copy(str(model_path), str(best_model_path))
 
 
 main()
