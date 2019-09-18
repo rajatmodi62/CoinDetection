@@ -10,7 +10,7 @@ model_list= ['resnet18', 'resnet34', 'resnet50', 'resnet101',
 
 
 
-def get_model(model_name='resnet152',pretrained_status=False,n_classes=2):
+def get_model(model_name='resnet18',pretrained_status=False,n_classes=2):
     if model_name not in model_list:
         print('model not found')
         return -1;
