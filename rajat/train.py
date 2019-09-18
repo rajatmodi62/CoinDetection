@@ -168,7 +168,7 @@ def main():
 
     #define optimizer and learning_rate
     init_optimizer=lambda lr: Adam(model.parameters(), lr=lr)
-    lr=0.001
+    lr=0.0001
     optimizer=init_optimizer(lr)
     criterion=Loss()
     #print(model)
