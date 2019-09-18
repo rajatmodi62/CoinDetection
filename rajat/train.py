@@ -160,7 +160,7 @@ def main():
     #define model, and handle gpus
 
     print('device is',device)
-    model_name='resnet152'
+    model_name='resnet18'
     model=get_model(model_name=model_name,pretrained_status=True,n_classes=n_classes).to(device)
     if device.type=="cuda":
         #model = nn.DataParallel(model, device_ids=device_list)
@@ -168,7 +168,7 @@ def main():
 
     #define optimizer and learning_rate
     init_optimizer=lambda lr: Adam(model.parameters(), lr=lr)
-    lr=0.0001
+    lr=0.001
     optimizer=init_optimizer(lr)
     criterion=Loss()
     #print(model)
