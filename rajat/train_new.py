@@ -141,7 +141,7 @@ def main():
     local_data_path.mkdir(exist_ok=True)
     #mention the fold path here
     train_path=local_data_path/'..'/'input'/'train'
-    a=CoinDataset(train_path,to_augment=True)
+    a=CoinDataset(train_path,to_augment=False)
     n_classes=get_n_classes(train_path)
     print(n_classes)
     '''
