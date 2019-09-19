@@ -75,7 +75,7 @@ class CoinDataset(Dataset):
         img = cv2.resize(img,img_size,interpolation=cv2.INTER_AREA)
         return img.astype(np.uint8)
 
-    def __init__(self, root: Path,labels_json='../indian_coins_dataset/cat_to_name.json' ,to_augment=False):
+    def __init__(self, root: Path,labels_json='../indian_coins_dataset/category_to_name.json' ,to_augment=False):
         # TODO This potentially may lead to bug.
         #self.image_paths = sorted(root.joinpath(mode).glob('/*/*.jpg'))
         self.image_path=[]
