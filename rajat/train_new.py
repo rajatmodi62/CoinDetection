@@ -75,7 +75,7 @@ class CoinDataset(Dataset):
         img = cv2.resize(img,img_size,interpolation=cv2.INTER_AREA)
         return img.astype(np.uint8)
 
-    def __init__(self, root: Path,labels_json='../input/cat_to_name.json' ,to_augment=False):
+    def __init__(self, root: Path,labels_json='../indian_coins_dataset/cat_to_name.json' ,to_augment=False):
         # TODO This potentially may lead to bug.
         #self.image_paths = sorted(root.joinpath(mode).glob('/*/*.jpg'))
         self.image_path=[]
@@ -158,9 +158,9 @@ def main():
 
     #craeting a dataloader
     #mention the fold path here
-    train_path=local_data_path/'..'/'input'/'train'
+    train_path=local_data_path/'..'/'indian_coins_dataset'/'train'
     train_loader=make_loader(train_path,to_augment=False, shuffle=True)
-    validation_path=local_data_path/'..'/'input'/'validation'
+    validation_path=local_data_path/'..'/'indian_coins_dataset'/'validation'
     validation_loader=make_loader(validation_path,to_augment=False, shuffle=True)
 
     #define model, and handle gpus
