@@ -184,13 +184,13 @@ def main():
     local_data_path.mkdir(exist_ok=True)
     #mention the fold path here
     train_path=local_data_path/'..'/'indian_coins_dataset'/'train'
-    a=CoinDataset(train_path,to_augment=False)
+    a=CoinDataset(train_path,to_augment=True)
     n_classes=get_n_classes(train_path)
     print(n_classes)
     '''
     num_workers,batch_size
     '''
-    def make_loader(ds_root: Path, to_augment=False, shuffle=False):
+    def make_loader(ds_root: Path, to_augment=True, shuffle=False):
         return DataLoader(
             dataset=CoinDataset(ds_root, to_augment=to_augment),
             shuffle=shuffle,
@@ -202,11 +202,11 @@ def main():
     #craeting a dataloader
     #mention the fold path here
     train_path=local_data_path/'..'/'indian_coins_dataset'/'train'
-    train_loader=make_loader(train_path,to_augment=False, shuffle=True)
+    train_loader=make_loader(train_path,to_augment=True, shuffle=True)
     validation_path=local_data_path/'..'/'indian_coins_dataset'/'validation'
-    validation_loader=make_loader(validation_path,to_augment=False, shuffle=True)
+    validation_loader=make_loader(validation_path,to_augment=True, shuffle=True)
     test_path=local_data_path/'..'/'indian_coins_dataset'/'test'
-    test_loader=make_loader(test_path,to_augment=False, shuffle=True)
+    test_loader=make_loader(test_path,to_augment=True, shuffle=True)
 
     #define model, and handle gpus
 
@@ -236,43 +236,7 @@ def cyclic_lr(epoch, init_lr=1e-4, num_epochs_per_cycle=5, cycle_epochs_decay=2,
     lr = init_lr * (lr_decay_factor ** (epoch_in_cycle // cycle_epochs_decay))
     return lr
 
-"""
-def cyclical_lr(step_sz, min_lr=0.001, max_lr=1, mode='triangular', scale_func=None, scale_md='cycles', gamma=1.):
-    if scale_func == None:
-        if mode == 'triangular':
-            scale_fn = lambda x: 1.
-            scale_mode = 'cycles'
-        elif mode == 'triangular2':
-            scale_fn = lambda x: 1 / (2.**(x - 1))
-            scale_mode = 'cycles'
-        elif mode == 'exp_range':
-            scale_fn = lambda x: gamma**(x)
-            scale_mode = 'iterations'
-        else:
-            raise ValueError(f'The {mode} is not valid value!')
-    else:
-        scale_fn = scale_func
-        scale_mode = scale_md
-        
-    lr_lambda = lambda iters: min_lr + (max_lr - min_lr) * rel_val(iters, step_sz, scale_mode)
-    
-    def rel_val(iteration, stepsize, mode):
-        cycle = math.floor(1 + iteration / (2 * stepsize))
-        x = abs(iteration / stepsize - 2 * cycle + 1)
-        if mode == 'cycles':
-            return max(0, (1 - x)) * scale_fn(cycle)
-        elif mode == 'iterations':
-            return max(0, (1 - x)) * scale_fn(iteration)
-        else:
-            raise ValueError(f'The {scale_mode} is not valid value!')
-    return lr_lambda
-    
-optimizer = optim.Ad(model.parameters(), lr=1.)
-clr = cyclical_lr(step_size, min_lr=0.000001, max_lr=0.001, mode='triangular')
-scheduler = lr_scheduler.LambdaLR(optimizer, [clr])
-scheduler.step()
-optimizer.step()
-"""
+
     report_each=args.report_each
     #model save implementation
     model_path= local_data_path/'model_checkpoints'
