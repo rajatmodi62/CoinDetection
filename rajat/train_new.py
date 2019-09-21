@@ -3,6 +3,7 @@
 Created on Fri Sep 20 15:46:50 2019
 
 @author: hp
+:-)
 """
 
 # -*- coding: utf-8 -*-
@@ -53,14 +54,14 @@ augmentation_function = A.Compose([
     A.CLAHE(p=1),
     A.OneOf([
 	A.RandomContrast(),
-    A.RandomGamma(),
-    A.RandomBrightness(),
-    ], p=0.3),
+    	A.RandomGamma(),
+    	A.RandomBrightness(),
+    	], p=0.3),
     A.OneOf([
-    A.ElasticTransform(alpha=120, sigma=120 * 0.05, alpha_affine=120 * 0.03),
-    A.GridDistortion(),
-    A.OpticalDistortion(distort_limit=2, shift_limit=0.5),
-    ], p=0.3),
+    	A.ElasticTransform(alpha=120, sigma=120 * 0.05, alpha_affine=120 * 0.03),
+    	A.GridDistortion(),
+    	A.OpticalDistortion(distort_limit=2, shift_limit=0.5),
+    	], p=0.3),
     A.ShiftScaleRotate(),
     ])
 
