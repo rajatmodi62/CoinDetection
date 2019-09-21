@@ -51,19 +51,18 @@ augmentation_function = A.Compose([
     A.CenterCrop(499,440,p=1),
     A.Resize(512,512,p=1),
     A.CLAHE(p=1),
-], p=1),
-A.OneOf([
+    A.OneOf([
 	A.RandomContrast(),
-        A.RandomGamma(),
-        A.RandomBrightness(),
-        ], p=0.3),
-    	A.OneOf([
-        A.ElasticTransform(alpha=120, sigma=120 * 0.05, alpha_affine=120 * 0.03),
-        A.GridDistortion(),
-        A.OpticalDistortion(distort_limit=2, shift_limit=0.5),
-        ], p=0.3),
-    	A.ShiftScaleRotate(),
-])
+    A.RandomGamma(),
+    A.RandomBrightness(),
+    ], p=0.3),
+    A.OneOf([
+    A.ElasticTransform(alpha=120, sigma=120 * 0.05, alpha_affine=120 * 0.03),
+    A.GridDistortion(),
+    A.OpticalDistortion(distort_limit=2, shift_limit=0.5),
+    ], p=0.3),
+    A.ShiftScaleRotate(),
+    ])
 
 
 #transformer pipeline
