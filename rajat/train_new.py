@@ -216,18 +216,20 @@ def main():
         #model = nn.DataParallel(model, device_ids=device_list)
         print('cuda devices',device_list)
 
-    #define optimizer and learning_rate
-    init_optimizer=lambda lr: Adam(model.parameters(), lr=lr)
-    lr=0.0001
-    optimizer=init_optimizer(lr)
-    criterion=Loss()
-    #print(model)
-    
+   
    
 def cyclic_lr(epoch, init_lr=1e-4, num_epochs_per_cycle=5, cycle_epochs_decay=2, lr_decay_factor=0.5):
     epoch_in_cycle = epoch % num_epochs_per_cycle
     lr = init_lr * (lr_decay_factor ** (epoch_in_cycle // cycle_epochs_decay))
     return lr
+
+ #define optimizer and learning_rate
+    init_optimizer=lambda cyclic_lr: Adam(model.parameters(), cyclic_lr=cyclic_lr)
+    #lr=0.0001
+    optimizer=init_optimizer(cyclic_lr)
+    criterion=Loss()
+    #print(model)
+    
 
 
     report_each=args.report_each
@@ -253,7 +255,7 @@ def cyclic_lr(epoch, init_lr=1e-4, num_epochs_per_cycle=5, cycle_epochs_decay=2,
 
         model.train()
         tq = tqdm(total=(len(train_loader) * args.batch_size))
-        tq.set_description('Epoch {}, lr {}'.format(epoch, lr))
+        tq.set_description('Epoch {}, cyclic_lr {}'.format(epoch, cyclic_lr))
         losses = []
 
         for i, (inputs,_,_, targets) in enumerate(train_loader):
