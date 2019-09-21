@@ -165,6 +165,11 @@ def test(model: nn.Module, criterion, test_loader):
     return metrics
 
 
+def cyclic_lr(epoch, init_lr=1e-4, num_epochs_per_cycle=5, cycle_epochs_decay=2, lr_decay_factor=0.5):
+    epoch_in_cycle = epoch % num_epochs_per_cycle
+    lr = init_lr * (lr_decay_factor ** (epoch_in_cycle // cycle_epochs_decay))
+    return lr
+
 device,device_list=get_cuda_devices()
 def main():
     parser = argparse.ArgumentParser()
@@ -216,12 +221,7 @@ def main():
         #model = nn.DataParallel(model, device_ids=device_list)
         print('cuda devices',device_list)
 
-   
-   
-def cyclic_lr(epoch, init_lr=1e-4, num_epochs_per_cycle=5, cycle_epochs_decay=2, lr_decay_factor=0.5):
-    epoch_in_cycle = epoch % num_epochs_per_cycle
-    lr = init_lr * (lr_decay_factor ** (epoch_in_cycle // cycle_epochs_decay))
-    return lr
+  
 
  #define optimizer and learning_rate
     init_optimizer=lambda cyclic_lr: Adam(model.parameters(), cyclic_lr=cyclic_lr)
@@ -287,5 +287,5 @@ def cyclic_lr(epoch, init_lr=1e-4, num_epochs_per_cycle=5, cycle_epochs_decay=2,
             print('found better val loss model')
             best_valid_loss = valid_loss
             shutil.copy(str(model_path), str(best_model_path))
-	torch.save(model, model_path)
+	save(ep)
 main()
