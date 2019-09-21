@@ -1,3 +1,17 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Sep 20 15:46:50 2019
+
+@author: hp
+:-)
+"""
+
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Sep 18 22:18:39 2019
+@author: hp
+"""
+
 import argparse
 import json
 from pathlib import Path
@@ -32,12 +46,6 @@ def get_cuda_devices():
 
 img_size=(499,499)
 
-
-# augmentation_function = A.Compose([
-#     A.CenterCrop(499,440,p=1),
-#     A.Resize(512,512,p=1),
-#     A.CLAHE(p=1),
-# ], p=1)
 
 
 augmentation_function = A.Compose([
@@ -88,7 +96,7 @@ class CoinDataset(Dataset):
         img = cv2.resize(img,img_size,interpolation=cv2.INTER_AREA)
         return img.astype(np.uint8)
 
-    def __init__(self, root: Path,labels_json='../input/cat_to_name.json' ,to_augment=False):
+    def __init__(self, root: Path,labels_json='../indian_coins_dataset/category_to_name.json' ,to_augment=False):
         # TODO This potentially may lead to bug.
         #self.image_paths = sorted(root.joinpath(mode).glob('/*/*.jpg'))
         self.image_path=[]
@@ -110,7 +118,7 @@ class CoinDataset(Dataset):
         img = self.load_image(self.image_path[idx])
 
         if self.to_augment:
-            # print('going for augmentation')
+            #print('going for augmentation')
             img = self.augment(img)
 
         #return img, self.image_path[idx],self.image_cat[idx],self.image_label[idx]
@@ -158,6 +166,12 @@ def test(model: nn.Module, criterion, test_loader):
     metrics = {'test_loss': test_loss}
     return metrics
 
+
+def cyclic_lr(epoch, init_lr=1e-4, num_epochs_per_cycle=5, cycle_epochs_decay=2, lr_decay_factor=0.5):
+    epoch_in_cycle = epoch % num_epochs_per_cycle
+    lr = init_lr * (lr_decay_factor ** (epoch_in_cycle // cycle_epochs_decay))
+    return lr
+
 device,device_list=get_cuda_devices()
 def main():
     parser = argparse.ArgumentParser()
@@ -167,7 +181,6 @@ def main():
     arg('--batch_size', type=int, default=16, help='Enter batch size')
     arg('--n_epochs', type=int, default=52, help='Enter number of epochs to run training for')
     arg('--report_each', type=int, default=10, help='Enter the span of last readings of running loss to report')
-    arg('--lr', type=int, default=0.0001, help='Enter learning rate')
     arg('--fold_no', type=int, default=0, help='Enter the fold no')
     arg('--to_augment', type=bool, default=False, help='Augmentation flag')
     args = parser.parse_args()
@@ -176,15 +189,14 @@ def main():
     local_data_path = Path('.').absolute()
     local_data_path.mkdir(exist_ok=True)
     #mention the fold path here
-    train_path=local_data_path/'..'/'input'/'train'
-    a=CoinDataset(train_path,to_augment=args.to_augment)
+    train_path=local_data_path/'..'/'indian_coins_dataset'/'train'
+    a=CoinDataset(train_path,to_augment=True)
     n_classes=get_n_classes(train_path)
     print(n_classes)
     '''
-
     num_workers,batch_size
     '''
-    def make_loader(ds_root: Path, to_augment=False, shuffle=False):
+    def make_loader(ds_root: Path, to_augment=True, shuffle=False):
         return DataLoader(
             dataset=CoinDataset(ds_root, to_augment=to_augment),
             shuffle=shuffle,
@@ -195,28 +207,32 @@ def main():
 
     #craeting a dataloader
     #mention the fold path here
-    train_path=local_data_path/'..'/'input'/'train'
-    train_loader=make_loader(train_path,to_augment=args.to_augment, shuffle=True)
-    validation_path=local_data_path/'..'/'input'/'validation'
-    validation_loader=make_loader(validation_path,to_augment=args.to_augment, shuffle=True)
-    test_path=local_data_path/'..'/'input'/'test'
-    test_loader=make_loader(test_path,to_augment=args.to_augment, shuffle=True)
+    train_path=local_data_path/'..'/'indian_coins_dataset'/'train'
+    train_loader=make_loader(train_path,to_augment=True, shuffle=True)
+    validation_path=local_data_path/'..'/'indian_coins_dataset'/'validation'
+    validation_loader=make_loader(validation_path,to_augment=True, shuffle=True)
+    test_path=local_data_path/'..'/'indian_coins_dataset'/'test'
+    test_loader=make_loader(test_path,to_augment=True, shuffle=True)
 
     #define model, and handle gpus
 
     print('device is',device)
-    model_name='resnet50'
+    model_name='resnet18'
     model=get_model(model_name=model_name,pretrained_status=True,n_classes=n_classes).to(device)
     if device.type=="cuda":
         #model = nn.DataParallel(model, device_ids=device_list)
         print('cuda devices',device_list)
 
-    #define optimizer and learning_rate
-    init_optimizer=lambda lr: Adam(model.parameters(), lr=lr)
-    lr=args.lr
-    optimizer=init_optimizer(lr)
+
+
+ #define optimizer and learning_rate
+    init_optimizer=lambda cyclic_lr: Adam(model.parameters(), cyclic_lr=cyclic_lr)
+    #lr=0.0001
+    optimizer=init_optimizer(cyclic_lr)
     criterion=Loss()
     #print(model)
+
+
 
     report_each=args.report_each
     #model save implementation
@@ -236,15 +252,16 @@ def main():
 
     best_valid_loss = float('inf')
     valid_losses = []
-    test_losses=[]
+    test_losses = []
     for epoch in range(0, args.n_epochs):
 
         model.train()
         tq = tqdm(total=(len(train_loader) * args.batch_size))
-        tq.set_description('Epoch {}, lr {}'.format(epoch, lr))
+        tq.set_description('Epoch {}, cyclic_lr {}'.format(epoch, cyclic_lr))
         losses = []
 
         for i, (inputs,_,_, targets) in enumerate(train_loader):
+
             inputs=inputs.to(device)
             outputs = model(inputs)
             _, preds = torch.max(outputs, 1)
@@ -259,17 +276,18 @@ def main():
             (batch_size * loss).backward()
             optimizer.step()
         tq.close()
-        save(epoch)
         valid_metrics = validation(model, criterion, validation_loader)
         valid_loss = valid_metrics['valid_loss']
         valid_losses.append(valid_loss)
+
+
         test_metrics = test(model, criterion, test_loader)
         test_loss = test_metrics['test_loss']
         test_losses.append(test_loss)
+
         if valid_loss < best_valid_loss:
             print('found better val loss model')
             best_valid_loss = valid_loss
             shutil.copy(str(model_path), str(best_model_path))
-
-
+save(ep)
 main()
