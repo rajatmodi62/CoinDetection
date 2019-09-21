@@ -287,5 +287,5 @@ def cyclic_lr(epoch, init_lr=1e-4, num_epochs_per_cycle=5, cycle_epochs_decay=2,
             print('found better val loss model')
             best_valid_loss = valid_loss
             shutil.copy(str(model_path), str(best_model_path))
-
+	torch.save(model, model_path)
 main()
