@@ -167,6 +167,7 @@ def main():
     arg('--batch_size', type=int, default=16, help='Enter batch size')
     arg('--n_epochs', type=int, default=52, help='Enter number of epochs to run training for')
     arg('--report_each', type=int, default=10, help='Enter the span of last readings of running loss to report')
+    arg('--lr', type=int, default=0.0001, help='Enter learning rate')
     arg('--fold_no', type=int, default=0, help='Enter the fold no')
     arg('--to_augment', type=bool, default=False, help='Augmentation flag')
     args = parser.parse_args()
@@ -204,7 +205,7 @@ def main():
     #define model, and handle gpus
 
     print('device is',device)
-    model_name='resnet18'
+    model_name='resnet50'
     model=get_model(model_name=model_name,pretrained_status=True,n_classes=n_classes).to(device)
     if device.type=="cuda":
         #model = nn.DataParallel(model, device_ids=device_list)
@@ -212,7 +213,7 @@ def main():
 
     #define optimizer and learning_rate
     init_optimizer=lambda lr: Adam(model.parameters(), lr=lr)
-    lr=0.0001
+    lr=args.lr
     optimizer=init_optimizer(lr)
     criterion=Loss()
     #print(model)
