@@ -88,7 +88,7 @@ class CoinDataset(Dataset):
         img = cv2.resize(img,img_size,interpolation=cv2.INTER_AREA)
         return img.astype(np.uint8)
 
-    def __init__(self, root: Path,labels_json='../input/cat_to_name.json' ,to_augment=False):
+    def __init__(self, root: Path,labels_json='../input/category_to_name.json' ,to_augment=False):
         # TODO This potentially may lead to bug.
         #self.image_paths = sorted(root.joinpath(mode).glob('/*/*.jpg'))
         self.image_path=[]
@@ -205,7 +205,7 @@ def main():
     #define model, and handle gpus
 
     print('device is',device)
-    model_name='resnet50'
+    model_name='resnet18'
     model=get_model(model_name=model_name,pretrained_status=True,n_classes=n_classes).to(device)
     if device.type=="cuda":
         #model = nn.DataParallel(model, device_ids=device_list)
