@@ -205,7 +205,7 @@ def main():
     #define model, and handle gpus
 
     print('device is',device)
-    model_name='resnet18'
+    model_name='resnet50'
     model=get_model(model_name=model_name,pretrained_status=True,n_classes=n_classes).to(device)
     if device.type=="cuda":
         #model = nn.DataParallel(model, device_ids=device_list)
