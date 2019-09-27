@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Sep 26 21:58:42 2019
-
-@author: hp
-"""
-
 import argparse
 import json
 from pathlib import Path
@@ -127,42 +120,48 @@ class CoinDataset(Dataset):
 def validation(model: nn.Module, criterion, valid_loader):
     model.eval()
     losses = []
-
+    total=0
+    correct=0
     for i, (inputs,_,_, targets) in enumerate(valid_loader):
 
         inputs=inputs.to(device)
         outputs = model(inputs)
         _, preds = torch.max(outputs, 1)
         targets=targets.to(device)-1
+        total += targets.size(0)
+        correct += (preds == targets).sum().item()
         loss = criterion(outputs, targets)
         batch_size = inputs.size(0)
         losses.append(loss.item())
 
     valid_loss = np.mean(losses)  # type: float
-
-    print('Valid loss: {:.5f}'.format(valid_loss))
-    #metrics = {'valid_loss','valid_accuracy': valid_loss, valid_accuracy}
+    accuracy=100*correct/total
+    print('Valid loss: {:.5f},Accuracy : {:.5f}'.format(valid_loss,accuracy))
+    metrics = {'valid_loss': valid_loss,'accuracy':accuracy}
     return metrics
 
 
 def test(model: nn.Module, criterion, test_loader):
     model.eval()
     losses = []
-
+    total=0
+    correct=0
     for i, (inputs,_,_, targets) in enumerate(test_loader):
 
         inputs=inputs.to(device)
         outputs = model(inputs)
         _, preds = torch.max(outputs, 1)
         targets=targets.to(device)-1
+        total += targets.size(0)
+        correct += (preds == targets).sum().item()
         loss = criterion(outputs, targets)
         batch_size = inputs.size(0)
         losses.append(loss.item())
 
     test_loss = np.mean(losses)  # type: float
-
-    print('Test loss: {:.5f}'.format(test_loss))
-    metrics = {'test_loss','test_accuracy': test_loss, test_accuracy}
+    accuracy=100*correct/total
+    print('Test Loss loss: {:.5f},Accuracy : {:.5f}'.format(test_loss,accuracy))
+    metrics = {'test_loss': test_loss,'accuracy':accuracy}
     return metrics
 
 device,device_list=get_cuda_devices()
@@ -211,7 +210,7 @@ def main():
     #define model, and handle gpus
 
     print('device is',device)
-    model_name='resnet18'
+    model_name='resnet34'
     model=get_model(model_name=model_name,pretrained_status=True,n_classes=n_classes).to(device)
     if device.type=="cuda":
         #model = nn.DataParallel(model, device_ids=device_list)
@@ -243,19 +242,20 @@ def main():
     best_valid_loss = float('inf')
     valid_losses = []
     test_losses=[]
-    #valid_accuracy=[]
-    #test_accuracy=[]
+    valid_accuracy = []
+    test_accuracy=[]
     for epoch in range(0, args.n_epochs):
 
         model.train()
         tq = tqdm(total=(len(train_loader) * args.batch_size))
         tq.set_description('Epoch {}, lr {}'.format(epoch, lr))
         losses = []
-
         for i, (inputs,_,_, targets) in enumerate(train_loader):
             inputs=inputs.to(device)
             outputs = model(inputs)
+            #start here
             _, preds = torch.max(outputs, 1)
+            #end here
             targets=targets.to(device)-1
             loss = criterion(outputs, targets)
             optimizer.zero_grad()
@@ -266,30 +266,18 @@ def main():
             tq.set_postfix(loss='{:.5f}'.format(mean_loss))
             (batch_size * loss).backward()
             optimizer.step()
-       """     
-            count=0
-            total=0
-            preds = torch.max(output)
-            count+= (label==pred)
-              """  
-            
         tq.close()
         save(epoch)
-        #total++
         valid_metrics = validation(model, criterion, validation_loader)
         valid_loss = valid_metrics['valid_loss']
-        #valid_accuracy = valid_metrics['valid_accuracy']
         valid_losses.append(valid_loss)
-       # valid_accuracy.append(valid_accuracy)
         test_metrics = test(model, criterion, test_loader)
         test_loss = test_metrics['test_loss']
         test_losses.append(test_loss)
-        #test_accuracy = test_metrics['test_accuracy']
-        #test_accuracy.append(test_accuracy)
         if valid_loss < best_valid_loss:
             print('found better val loss model')
             best_valid_loss = valid_loss
             shutil.copy(str(model_path), str(best_model_path))
-       # print('Accuracy of the network on test images: %d %%' % (100 * count / total))
+
 
 main()
