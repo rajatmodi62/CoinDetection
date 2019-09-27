@@ -127,9 +127,9 @@ def validation(model: nn.Module, criterion, valid_loader):
         inputs=inputs.to(device)
         outputs = model(inputs)
         _, preds = torch.max(outputs, 1)
+        targets=targets.to(device)-1
         total += targets.size(0)
         correct += (preds == targets).sum().item()
-        targets=targets.to(device)-1
         loss = criterion(outputs, targets)
         batch_size = inputs.size(0)
         losses.append(loss.item())
@@ -151,9 +151,9 @@ def test(model: nn.Module, criterion, test_loader):
         inputs=inputs.to(device)
         outputs = model(inputs)
         _, preds = torch.max(outputs, 1)
+        targets=targets.to(device)-1
         total += targets.size(0)
         correct += (preds == targets).sum().item()
-        targets=targets.to(device)-1
         loss = criterion(outputs, targets)
         batch_size = inputs.size(0)
         losses.append(loss.item())
@@ -256,7 +256,6 @@ def main():
             outputs = model(inputs)
             #start here
             _, preds = torch.max(outputs, 1)
-            total=total+targets.size(0)
             #end here
             targets=targets.to(device)-1
             loss = criterion(outputs, targets)
@@ -268,6 +267,7 @@ def main():
             tq.set_postfix(loss='{:.5f}'.format(mean_loss))
             (batch_size * loss).backward()
             optimizer.step()
+            break
         tq.close()
         save(epoch)
         valid_metrics = validation(model, criterion, validation_loader)
