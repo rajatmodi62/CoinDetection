@@ -267,7 +267,6 @@ def main():
             tq.set_postfix(loss='{:.5f}'.format(mean_loss))
             (batch_size * loss).backward()
             optimizer.step()
-            break
         tq.close()
         save(epoch)
         valid_metrics = validation(model, criterion, validation_loader)
