@@ -120,42 +120,48 @@ class CoinDataset(Dataset):
 def validation(model: nn.Module, criterion, valid_loader):
     model.eval()
     losses = []
-
+    total=0
+    correct=0
     for i, (inputs,_,_, targets) in enumerate(valid_loader):
 
         inputs=inputs.to(device)
         outputs = model(inputs)
         _, preds = torch.max(outputs, 1)
+        total += targets.size(0)
+        correct += (preds == targets).sum().item()
         targets=targets.to(device)-1
         loss = criterion(outputs, targets)
         batch_size = inputs.size(0)
         losses.append(loss.item())
 
     valid_loss = np.mean(losses)  # type: float
-
-    print('Valid loss: {:.5f}'.format(valid_loss))
-    metrics = {'valid_loss': valid_loss}
+    accuracy=100*correct/total
+    print('Valid loss: {:.5f},Accuracy : {:.5f}'.format(valid_loss,accuracy))
+    metrics = {'valid_loss': valid_loss,'accuracy':accuracy}
     return metrics
 
 
 def test(model: nn.Module, criterion, test_loader):
     model.eval()
     losses = []
-
+    total=0
+    correct=0
     for i, (inputs,_,_, targets) in enumerate(test_loader):
 
         inputs=inputs.to(device)
         outputs = model(inputs)
         _, preds = torch.max(outputs, 1)
+        total += targets.size(0)
+        correct += (preds == targets).sum().item()
         targets=targets.to(device)-1
         loss = criterion(outputs, targets)
         batch_size = inputs.size(0)
         losses.append(loss.item())
 
     test_loss = np.mean(losses)  # type: float
-
-    print('Test loss: {:.5f}'.format(test_loss))
-    metrics = {'test_loss': test_loss}
+    accuracy=100*correct/total
+    print('Test Loss loss: {:.5f},Accuracy : {:.5f}'.format(test_loss,accuracy))
+    metrics = {'test_loss': test_loss,'accuracy':accuracy}
     return metrics
 
 device,device_list=get_cuda_devices()
@@ -237,17 +243,21 @@ def main():
     best_valid_loss = float('inf')
     valid_losses = []
     test_losses=[]
+    valid_accuracy = []
+    test_accuracy=[]
     for epoch in range(0, args.n_epochs):
 
         model.train()
         tq = tqdm(total=(len(train_loader) * args.batch_size))
         tq.set_description('Epoch {}, lr {}'.format(epoch, lr))
         losses = []
-
         for i, (inputs,_,_, targets) in enumerate(train_loader):
             inputs=inputs.to(device)
             outputs = model(inputs)
+            #start here
             _, preds = torch.max(outputs, 1)
+            total=total+targets.size(0)
+            #end here
             targets=targets.to(device)-1
             loss = criterion(outputs, targets)
             optimizer.zero_grad()
