@@ -173,7 +173,7 @@ def main():
     arg('--batch_size', type=int, default=16, help='Enter batch size')
     arg('--n_epochs', type=int, default=52, help='Enter number of epochs to run training for')
     arg('--report_each', type=int, default=10, help='Enter the span of last readings of running loss to report')
-    arg('--lr', type=int, default=0.0001, help='Enter learning rate')
+    arg('--lr', type=float, default=0.0001, help='Enter learning rate')
     arg('--fold_no', type=int, default=0, help='Enter the fold no')
     arg('--to_augment', type=bool, default=False, help='Augmentation flag')
     args = parser.parse_args()
