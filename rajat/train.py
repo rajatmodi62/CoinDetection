@@ -176,6 +176,8 @@ def main():
     arg('--lr', type=int, default=0.0001, help='Enter learning rate')
     arg('--fold_no', type=int, default=0, help='Enter the fold no')
     arg('--to_augment', type=bool, default=False, help='Augmentation flag')
+    arg('--model_name',type=str,default='resnet18',help='enter model name')
+
     args = parser.parse_args()
 
 
@@ -211,7 +213,7 @@ def main():
     #define model, and handle gpus
 
     print('device is',device)
-    model_name='resnet18'
+    model_name=args.model_name
     model=get_model(model_name=model_name,pretrained_status=True,n_classes=n_classes).to(device)
     if device.type=="cuda":
         #model = nn.DataParallel(model, device_ids=device_list)
