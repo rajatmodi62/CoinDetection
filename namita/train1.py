@@ -296,6 +296,7 @@ def main():
                     col_list.append(get_column_name(trial,mode,metric))
         
         df = pd.DataFrame(0.0, index=np.arange(n_epochs), columns=col_list)
+        df.to_csv('results.csv')
 
         print('before',df.loc[epoch][get_column_name(trial,mode,'loss')])
         df.loc[epoch][get_column_name(trial,mode,'loss')]=epoch_loss
