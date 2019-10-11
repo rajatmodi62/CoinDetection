@@ -248,65 +248,82 @@ def main():
     test_losses=[]
     valid_accuracy = []
     test_accuracy=[]
-    for epoch in range(0, args.n_epochs):
+    
+    ####defining the dataframe for dumping outputs##############################
+    n_trials=1
+    modes=['train','validation','test']
+    metrics=['loss','accuracy']
+    def get_column_name(trial,mode,metric):
+        return 'trial= '+str(trial)+ ' mode=' + mode + ' metric=' + metric
 
-        model.train()
-        tq = tqdm(total=(len(train_loader) * args.batch_size))
-        tq.set_description('Epoch {}, lr {}'.format(epoch, lr))
-        losses = []
-        for i, (inputs,_,_, targets) in enumerate(train_loader):
-            inputs=inputs.to(device)
-            outputs = model(inputs)
-            #start here
-            _, preds = torch.max(outputs, 1)
-            #end here
-            targets=targets.to(device)-1
-            loss = criterion(outputs, targets)
-            optimizer.zero_grad()
-            batch_size = inputs.size(0)
-            tq.update(batch_size)
-            losses.append(loss.item())
-            mean_loss = np.mean(losses[-report_each:])
-            tq.set_postfix(loss='{:.5f}'.format(mean_loss))
-            (batch_size * loss).backward()
-            optimizer.step()
-        tq.close()
-        save(epoch)
-        
-        train_loss=np.mean(losses)
-        valid_metrics = validation(model, criterion, validation_loader)
-        valid_loss = valid_metrics['valid_loss']
-        valid_losses.append(valid_loss)
-        test_metrics = test(model, criterion, test_loader)
-        test_loss = test_metrics['test_loss']
-        test_losses.append(test_loss)
-        
-        n_epochs=50
-        n_trials=1
-        model_name='resnet_18'
-        modes=['train','validation','test']
-        metrics=['train_loss','valid_loss','test_loss','valid_accuracy','test_accuracy']
-        def get_column_name(trial,mode,metric):
-            return 'trial= '+str(trial)+ ' mode=' + mode + ' metric=' + metric
+    col_list=[]
+    for trial in range(n_trials):
+        for mode in modes: 
+            for metric in metrics:
+                col_list.append(get_column_name(trial,mode,metric))
+    
+    #create the dataframe before saving the results 
+    df = pd.DataFrame(0.0, index=np.arange(args.n_epochs), columns=col_list)
+    ########training loop begins#################################################
+    ####need to start the trial of the experiment here 
+    for trial in range(n_trials):
+        for epoch in range(0, args.n_epochs):
 
-        col_list=[]
-        for trial in range(n_trials):
-            for mode in modes: 
-                for metric in metrics:
-                    col_list.append(get_column_name(trial,mode,metric))
-        
-        df = pd.DataFrame(0.0, index=np.arange(n_epochs), columns=col_list)
-        df.to_csv('results.csv')
+            model.train()
+            tq = tqdm(total=(len(train_loader) * args.batch_size))
+            tq.set_description('Epoch {}, lr {}'.format(epoch, lr))
+            losses = []
+            for i, (inputs,_,_, targets) in enumerate(train_loader):
+                inputs=inputs.to(device)
+                outputs = model(inputs)
+                #start here
+                _, preds = torch.max(outputs, 1)
+                #end here
+                targets=targets.to(device)-1
+                loss = criterion(outputs, targets)
+                optimizer.zero_grad()
+                batch_size = inputs.size(0)
+                tq.update(batch_size)
+                losses.append(loss.item())
+                mean_loss = np.mean(losses[-report_each:])
+                tq.set_postfix(loss='{:.5f}'.format(mean_loss))
+                (batch_size * loss).backward()
+                optimizer.step()
+            tq.close()
+            save(epoch)
+            #############epoch completes here, dump the data to the dataframe ##############3
+            
+            train_loss=np.mean(losses)
+            valid_metrics = validation(model, criterion, validation_loader)
+            valid_loss = valid_metrics['valid_loss']
+            valid_accuracy=valid_metrics['valid_accuracy']
+            valid_losses.append(valid_loss)
+            test_metrics = test(model, criterion, test_loader)
+            test_loss = test_metrics['test_loss']
+            test_accuracy=test_accuracy['test_accuracy']
+            test_losses.append(test_loss)
 
-        print('before',df.loc[epoch][get_column_name(trial,mode,'loss')])
-       # df.loc[epoch][get_column_name(trial,mode,'loss')]=epoch_loss
-        df.loc[epoch][get_column_name(trial,mode,'train_loss','valid_loss','test_loss')]=epoch_loss
-        print('after',df.loc[epoch][get_column_name(trial,mode,'loss')])
-        df.loc[epoch][get_column_name(trial,mode,'valid_accuracy','test_accuracy')]=epoch_acc
-        if valid_loss < best_valid_loss:
-            print('found better val loss model')
-            best_valid_loss = valid_loss
-            shutil.copy(str(model_path), str(best_model_path))
+            #update the data in the data frame 
+            #test accuracy not needed leave it 
+            
+            df.loc[epoch][get_column_name(trial,'train','loss')]=train_loss
+            df.loc[epoch][get_column_name(trial,'validation','loss')]=validation_loss
+            df.loc[epoch][get_column_name(trial,'validation','accuracy')]=validation_accuracy
+            df.loc[epoch][get_column_name(trial,'test','loss')]=test_loss
+            df.loc[epoch][get_column_name(trial,'test','accuracy')]=test_accuracy
+            
+            #just check if correctly updated
+            print('just checking if one field updated',df.loc[epoch][get_column_name(trial,'test','accuracy')])
+            
+            #save the incomplete dataframe till now 
+            df.to_csv('results.csv')
+            if valid_loss < best_valid_loss:
+                print('found better val loss model')
+                best_valid_loss = valid_loss
+                shutil.copy(str(model_path), str(best_model_path))
+    
+    #save the complete dataframe here
+    df.to_csv('results.csv')
 
 
 main()
