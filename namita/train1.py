@@ -286,7 +286,7 @@ def main():
         modes=['train','validation','test']
         metrics=['loss','accuracy']
         def get_column_name(trial,mode,metric):
-            return trial= '+str(trial)+ ' mode=' + mode + ' metric=' + metric
+            return 'trial= '+str(trial)+ ' mode=' + mode + ' metric=' + metric
 
         col_list=[]
         for trial in range(n_trials):
