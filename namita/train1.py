@@ -138,7 +138,7 @@ def validation(model: nn.Module, criterion, valid_loader):
     valid_loss = np.mean(losses)  # type: float
     accuracy=100*correct/total
     print('Valid loss: {:.5f},Accuracy : {:.5f}'.format(valid_loss,accuracy))
-    metrics = {'valid_loss': valid_loss,'accuracy':accuracy}
+    metrics = {'valid_loss': valid_loss,'valid_accuracy':accuracy}
     return metrics
 
 
@@ -162,7 +162,7 @@ def test(model: nn.Module, criterion, test_loader):
     test_loss = np.mean(losses)  # type: float
     accuracy=100*correct/total
     print('Test Loss loss: {:.5f},Accuracy : {:.5f}'.format(test_loss,accuracy))
-    metrics = {'test_loss': test_loss,'accuracy':accuracy}
+    metrics = {'test_loss': test_loss,'test_accuracy':accuracy}
     return metrics
 
 device,device_list=get_cuda_devices()
