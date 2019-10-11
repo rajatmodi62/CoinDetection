@@ -285,7 +285,7 @@ def main():
         n_trials=1
         model_name='resnet_18'
         modes=['train','validation','test']
-        metrics=['loss','accuracy']
+        metrics=['train_loss','valid_loss','test_loss','valid_accuracy','test_accuracy']
         def get_column_name(trial,mode,metric):
             return 'trial= '+str(trial)+ ' mode=' + mode + ' metric=' + metric
 
@@ -299,9 +299,10 @@ def main():
         df.to_csv('results.csv')
 
         print('before',df.loc[epoch][get_column_name(trial,mode,'loss')])
-        df.loc[epoch][get_column_name(trial,mode,'loss')]=epoch_loss
+       # df.loc[epoch][get_column_name(trial,mode,'loss')]=epoch_loss
+        df.loc[epoch][get_column_name(trial,mode,'train_loss','valid_loss','test_loss')]=epoch_loss
         print('after',df.loc[epoch][get_column_name(trial,mode,'loss')])
-        df.loc[epoch][get_column_name(trial,mode,'accuracy')]=epoch_acc
+        df.loc[epoch][get_column_name(trial,mode,'valid_accuracy','test_accuracy')]=epoch_acc
         if valid_loss < best_valid_loss:
             print('found better val loss model')
             best_valid_loss = valid_loss
