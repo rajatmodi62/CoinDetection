@@ -272,7 +272,8 @@ def main():
             optimizer.step()
         tq.close()
         save(epoch)
-        train_loss=losses.mean()
+        
+        train_loss=np.mean(losses)
         valid_metrics = validation(model, criterion, validation_loader)
         valid_loss = valid_metrics['valid_loss']
         valid_losses.append(valid_loss)
