@@ -36,8 +36,8 @@ img_size=(499,499)
 augmentation_function = A.Compose([
     A.CenterCrop(499,440,p=1),
     A.Resize(512,512,p=1),
-    A.CLAHE(p=1),
-    A.Grayscale(p=1),
+   # A.CLAHE(p=1),
+    A.ToGray(p=1),
 ], p=1)
 
 
