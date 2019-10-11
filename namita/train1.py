@@ -282,7 +282,7 @@ def main():
         test_losses.append(test_loss)
         
         n_epochs=50
-        n_trial=1
+        n_trials=1
         model_name='resnet_18'
         modes=['train','validation','test']
         metrics=['loss','accuracy']
