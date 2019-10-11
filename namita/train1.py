@@ -283,7 +283,7 @@ def main():
         n_epochs=50
         n_trial=1
         model_name='resnet_18'
-        modes=['train','validation','test’]
+        modes=['train','validation','test']
         metrics=['loss','accuracy']
         def get_column_name(trial,mode,metric):
             return trial= '+str(trial)+ ' mode=' + mode + ' metric=' + metric
